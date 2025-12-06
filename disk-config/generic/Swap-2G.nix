@@ -2,7 +2,7 @@
 {
   imports = [
     disko.nixosModules.disko
-    ./boot.nix
+    ../boot.nix
   ];
 
   disko.devices.disk.main = {
