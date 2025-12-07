@@ -20,10 +20,10 @@ in
 {
   networking = {
     inherit nameservers;
-    useDHCP = isDhcp;
+    useDHCP = false;
     networkmanager.enable = isDhcp;
     interfaces.${interface} = {
-      useDHCP = isDhcp;
+      useDHCP = false;
       ipv4.addresses = lib.mkIf hasIpv4 [ { address = ipv4.address; prefixLength = ipv4.prefixLength; } ];
       ipv6.addresses = lib.mkIf hasIpv6 [ { address = ipv6.address; prefixLength = ipv6.prefixLength; } ];
     };
