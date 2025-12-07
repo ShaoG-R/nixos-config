@@ -35,6 +35,11 @@ jobs:
           sudo chown -R $USER /nix
           echo "Directory bound to /nix"
 
+      - name: Fix Git Permissions
+        run: |
+           sudo chown -R $USER:$(id -gn $USER) /home/runner/work/nixos-config/nixos-config
+           git config --global --add safe.directory /home/runner/work/nixos-config/nixos-config
+
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
