@@ -36,6 +36,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Mount Nix Store
+        run: |
+          sudo mkdir -p /nix
+          sudo mount --bind /home/runner/work/nixos-config/nixos-config /nix
+          echo "Directory bound to /nix"
+
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
