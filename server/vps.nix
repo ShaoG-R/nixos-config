@@ -24,7 +24,6 @@ let
         inherit inputs diskDevice disko nixos-facter-modules;
       };
       modules = [
-        ./vps/disk/auto-resize.nix
         nixos-facter-modules.nixosModules.facter
         {
           nixpkgs.pkgs = pkgs;
