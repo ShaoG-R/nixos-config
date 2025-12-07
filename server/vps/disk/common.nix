@@ -1,9 +1,12 @@
-{ swapSize, imageSize }:
-{ lib, config, disko, diskDevice ? "/dev/sda", ... }:
+{ swapSize }:
+{ lib, config, pkgs, disko, diskDevice ? "/dev/sda", ... }:
+let
+  imageSize = "${toString (swapSize + 3072)}M";
+in
 {
   imports = [
     disko.nixosModules.disko
-    ../boot.nix
+    ./boot.nix
   ];
 
   disko.devices.disk.main = {
@@ -36,7 +39,7 @@
         # 2. Swap 分区
         swap = {
           priority = 2;
-          size = swapSize;
+          size = "${toString swapSize}M";
           content = {
             type = "swap";
             discardPolicy = "both";
@@ -76,4 +79,13 @@
   };
 
   fileSystems."/var/log".neededForBoot = true;
+
+  # 启动时自动修复 GPT 分区表并扩容最后一个分区
+  boot.growPartition = true;
+
+  # 针对 Btrfs 根分区的自动扩容配置
+  fileSystems."/".autoResize = true;
+
+  # 确保必要的工具在系统路径中 (cloud-utils 包含 growpart)
+  environment.systemPackages = [ pkgs.cloud-utils ];
 }

@@ -1,1 +1,0 @@
-(import ./common.nix { swapSize = "8G"; imageSize = "11G"; })
