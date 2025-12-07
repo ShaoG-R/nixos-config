@@ -20,13 +20,6 @@
   # --- SSH 服务 ---
   services.openssh.enable = true;
   
-  # --- 网络配置 ---
-  networking = {
-    # true (默认值)：启用 "Predictable Network Interface Names"。系统会根据网卡的物理位置（PCI插槽）命名，如 ens18, enp3s0。
-    # false：禁用该功能。内核会按照枚举顺序命名网卡，对于单网卡的 VPS，这几乎 100% 会是 eth0。
-    usePredictableInterfaceNames = lib.mkDefault false;
-  };
-
   # --- 自动更新配置 ---
   system.autoUpgrade = {
     enable = true;
