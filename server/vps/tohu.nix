@@ -9,6 +9,7 @@ mkSystem {
     ./platform/generic.nix
     ./kernel/cachyos.nix
     ./services/dns/smartdns-oversea.nix
+    ./services/web/nginx.nix
     ./profiles/memory/aggressive.nix
     (import ./profiles/update/auto-upgrade.nix { allowReboot = true; })
     (import ./disk/common.nix { swapSize = 2048; })
