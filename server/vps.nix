@@ -26,7 +26,6 @@ let
       modules = [
         ./vps/disk/auto-resize.nix
         nixos-facter-modules.nixosModules.facter
-        pkgSrc.nixosModules.readOnlyPkgs
         {
           nixpkgs.pkgs = pkgs;
         }
