@@ -10,13 +10,17 @@
   config = lib.mkIf enable {
     networking.firewall.allowedTCPPorts = [ 5244 ];
 
+    systemd.tmpfiles.rules = [
+      "d /var/lib/alist 0755 root root -"
+    ];
+
     virtualisation.oci-containers = {
       backend = "podman";
       containers.alist = {
         image = "xhofe/alist:beta";
         ports = [ "5244:5244" ];
         volumes = [
-          "/etc/alist:/opt/alist/data"
+          "/var/lib/alist:/opt/alist/data"
         ];
         environment = {
           PUID = "0";
