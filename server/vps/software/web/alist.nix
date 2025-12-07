@@ -8,7 +8,7 @@
   ];
 
   config = lib.mkIf enable {
-    networking.firewall.allowedTCPPorts = [ 5244 ];
+    # networking.firewall.allowedTCPPorts = [ 5244 ];
 
     systemd.tmpfiles.rules = [
       "d /var/lib/alist 0755 root root -"
