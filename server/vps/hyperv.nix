@@ -7,6 +7,7 @@ mkSystem {
   diskDevice = "/dev/sda";
   extraModules = [
     ./platform/generic.nix
+    ./kernel/xanmod.nix
     (import ./profiles/auto-upgrade.nix { allowReboot = true; })
     (import ./disk/common.nix { swapSize = 4096; })
     (import ./auth/permit_passwd.nix {

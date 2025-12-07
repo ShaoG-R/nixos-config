@@ -11,23 +11,11 @@
   # 启用实验性功能 (Flakes 和 nix-command)
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   
-  # 使用 XanMod 稳定版内核
-  boot.kernelPackages = pkgs.linuxKernel.packages.linux_xanmod_stable;
-  
   # 内核参数 (启用串口终端，通常用于 VPS 调试)
   boot.kernelParams = [ "console=ttyS0,115200n8" "console=tty0" ];
   
   # --- SSH 服务 ---
   services.openssh.enable = true;
-  
-
-
-  # --- 垃圾回收与存储优化 ---
-  nix.gc = {
-    automatic = true;
-    dates = "weekly"; # 每周执行
-    options = "--delete-older-than 30d"; # 删除 30 天前的旧版本
-  };
 
   # 每次构建时自动去重存储池以节省空间
   nix.settings.auto-optimise-store = true;

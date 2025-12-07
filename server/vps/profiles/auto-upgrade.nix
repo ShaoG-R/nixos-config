@@ -22,4 +22,11 @@
     # 随机延迟 10 分钟重启，避免由于定时任务导致的并发高峰
     randomizedDelaySec = "10min";
   };
+
+  # --- 垃圾回收与存储优化 ---
+  nix.gc = {
+    automatic = true;
+    dates = "weekly"; # 每周执行
+    options = "--delete-older-than 30d"; # 删除 30 天前的旧版本
+  };
 }
