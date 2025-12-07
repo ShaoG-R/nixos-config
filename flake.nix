@@ -47,8 +47,7 @@
               
               authorizedKeys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBaNS9FByCEaDjPOUpeQZg58zM2wD+jEY6SkIbE1k3Zn ed25519 256-20251206 shaog@duck.com" ];
             })
-            (import ./server/vps/network/static-ipv4.nix {
-                interface = "eth0";
+            (import ./server/vps/network/single-interface/static-ipv4.nix {
                 address = "66.235.104.29";
                 prefixLength = 24;
                 gateway = "66.235.104.1";
@@ -75,7 +74,7 @@
               
               authorizedKeys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBaNS9FByCEaDjPOUpeQZg58zM2wD+jEY6SkIbE1k3Zn ed25519 256-20251206 shaog@duck.com" ];
             })
-            (import ./server/vps/network/dhcp.nix)
+            (import ./server/vps/network/single-interface/dhcp.nix)
             ./disk/vps/Swap-4G.nix
             {
               networking.hostName = "hyperv";
