@@ -94,7 +94,7 @@ sudo nix run \
   --option experimental-features "nix-command flakes" \
   --option extra-substituters https://numtide.cachix.org \
   --option extra-trusted-public-keys numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE= \
-  github:nix-community/nixos-facter -- -o server/vps/hosts/facter/$HOST.json
+  github:nix-community/nixos-facter -- -o server/vps/facter/$HOST.json
 ```
 
 ### 4. 磁盘分区与安装
