@@ -47,9 +47,9 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
-            download-buffer-size = 268435456
+            download-buffer-size = 1073741824
             # 确保 Nix 知道我们可以用 KVM
-            system-features = kvm big-parallel
+            system-features = kvm big-parallel nixos-test
 
       # 关键步骤：确保 Runner 能够使用硬件虚拟化加速
       # 如果没有这一步，虚拟机测试会极慢（纯软件模拟）
