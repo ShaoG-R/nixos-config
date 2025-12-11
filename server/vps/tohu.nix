@@ -35,18 +35,8 @@ mkSystem {
       networking.hostName = "tohu";
       facter.reportPath = ./facter/tohu.json;
       system.stateVersion = "25.11";
-
-      system.activationScripts.copy-nixos-config = {
-        text = ''
-          if [ ! -f /etc/nixos/flake.nix ]; then
-            echo "Initializing /etc/nixos from flake source..."
-            mkdir -p /etc/nixos
-            # --no-preserve=mode 确保复制后文件不是只读的
-            cp -rT --no-preserve=mode ${inputs.self} /etc/nixos
-            chmod -R u+w /etc/nixos
-          fi
-        '';
-      };
+      # 启用 copySystemConfiguration 模块，用于初始化 /etc/nixos
+      system.copySystemConfiguration.enable = true;
     })
   ];
 }
