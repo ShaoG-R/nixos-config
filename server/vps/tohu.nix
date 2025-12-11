@@ -32,17 +32,22 @@ let
             (import ./kernel/cachyos-unstable.nix { inherit pkgs inputs; })
           ];
 
-          nixpkgs.overlays = lib.mkForce [ 
-            inputs.chaotic.overlays.default 
-          ];
-
-          nixpkgs.pkgs = lib.mkForce null;
-
           # 3. 模拟环境适配 (Mock)
           # 因为没有导入硬件配置，我们需要补充一些基础设置
           networking.hostName = "tohu-test";
           networking.useDHCP = true; 
           networking.firewall.enable = false;
+          
+          # 解决 Overlay 冲突：
+          # runNixOSTest 默认会锁定 pkgs，导致模块里的 overlay 无法生效且报错。
+          # 我们手动构造一个包含 chaotic overlay 的 pkgs 并强制使用它。
+          nixpkgs.pkgs = lib.mkForce (import inputs.nixpkgs {
+            inherit (pkgs) system;
+            overlays = [ inputs.chaotic.overlays.default ];
+            config.allowUnfree = true;
+          });
+          # 同时强制清空 overlays 定义，欺骗模块系统以为没有 overlay 冲突
+          nixpkgs.overlays = lib.mkForce [];
           
           # 模拟域名解析到本地
           networking.hosts = {
