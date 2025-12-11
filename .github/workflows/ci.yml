@@ -64,3 +64,19 @@ jobs:
         # 运行 flake.nix 中定义的 checks
         # --print-build-logs 非常重要，如果测试挂了，你能看到 Python 脚本的报错输出
         run: nix flake check --accept-flake-config --print-build-logs
+
+  # 任务 3: 聚合测试结果 (用于 Branch Protection Rule)
+  ci-success:
+    needs: 
+      - check-configuration
+      - integration-tests
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check Status
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more jobs failed or were cancelled."
+            exit 1
+          fi
+          echo "All jobs passed."
