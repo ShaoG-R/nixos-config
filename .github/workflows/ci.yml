@@ -1,12 +1,6 @@
 name: Build NixOS Configuration
 
 on:
-  push:
-    branches:
-      - rp
-    paths-ignore:
-      - 'README.md'
-      - 'docs/*'
   pull_request:
     branches:
       - main
@@ -14,6 +8,10 @@ on:
       - 'README.md'
       - 'docs/*'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check-configuration:
