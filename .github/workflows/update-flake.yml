@@ -1,0 +1,53 @@
+name: Update Flake Lock
+
+on:
+  schedule:
+    # 每天 UTC 0点 (北京时间早上8点)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 允许手动触发
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+    
+      - name: Setup Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v13
+
+      - name: Update flake.lock
+        run: nix flake update
+
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.PAT }}
+          
+          commit-message: "chore: update flake.lock"
+          title: "chore: update flake.lock"
+          body: |
+            Automated update of flake.lock.
+            
+            This PR will be automatically merged if the CI pipeline passes.
+          branch: "auto-update-flake-lock"
+          base: "main"
+          delete-branch: true
+
+      - name: Enable Pull Request Automerge
+        # 仅当成功创建了 PR 时运行
+        if: steps.cpr.outputs.pull-request-operation == 'created'
+        run: gh pr merge --auto --merge "${{ steps.cpr.outputs.pull-request-number }}"
+        env:
+          # 这里的 Token 必须有写权限，GITHUB_TOKEN 足够用于开启自动合并
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
