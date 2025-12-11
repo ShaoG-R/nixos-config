@@ -21,6 +21,8 @@ mkSystem {
       networking.hostName = "hyperv";
       facter.reportPath = ./facter/hyperv.json;
       system.stateVersion = "25.11"; 
+      # 启用 copyFlakeToNixos 模块，用于初始化 /etc/nixos
+      system.copyFlakeToNixos.enable = true;
     }
   ];
 }

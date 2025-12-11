@@ -20,5 +20,9 @@
 
   outputs = { self, ... }@inputs: {
     nixosConfigurations = import ./server/vps.nix { inherit inputs; };
+    
+    nixosModules = {
+       copySystemConfiguration = import ./modules/system/copy-config.nix;
+    };
   };
 }

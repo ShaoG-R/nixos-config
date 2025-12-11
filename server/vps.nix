@@ -25,6 +25,7 @@ let
       };
       modules = [
         nixos-facter-modules.nixosModules.facter
+        inputs.self.nixosModules.copySystemConfiguration
         ./vps/profiles/performance/generic.nix
         {
           nixpkgs.pkgs = pkgs;

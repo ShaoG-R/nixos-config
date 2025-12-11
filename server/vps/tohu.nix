@@ -31,10 +31,12 @@ mkSystem {
         prefixLength = 24;
         gateway = "66.235.104.1";
     })
-    {
+    ({ inputs, ... }: {
       networking.hostName = "tohu";
       facter.reportPath = ./facter/tohu.json;
       system.stateVersion = "25.11";
-    }
+      # 启用 copyFlakeToNixos 模块，用于初始化 /etc/nixos
+      system.copyFlakeToNixos.enable = true;
+    })
   ];
 }

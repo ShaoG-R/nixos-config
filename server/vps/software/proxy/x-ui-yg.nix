@@ -1,9 +1,9 @@
-{ domain ? null, enable ? true, username ? "", password ? "" }:
+{ domain ? null, enable ? true, username ? "", password ? "", backend ? "podman" }:
 { config, pkgs, lib, ... }:
 
 {
   imports = [
-    ../container/podman.nix
+    (if backend == "docker" then ../container/docker.nix else ../container/podman.nix)
   ] ++ lib.optionals (domain != null) [
     ../../services/web/nginx.nix
   ];
@@ -25,7 +25,7 @@
     ];
 
     virtualisation.oci-containers = {
-      backend = "podman";
+      inherit backend;
       containers.x-ui-yg = {
         image = "ghcr.io/shaog-r/x-ui-yg-docker:alpine";
         # 使用 host 网络模式

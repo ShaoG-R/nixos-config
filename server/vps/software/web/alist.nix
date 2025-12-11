@@ -1,9 +1,9 @@
-{ domain ? null, enable ? true }:
+{ domain ? null, enable ? true, backend ? "podman" }:
 { config, pkgs, lib, ... }:
 
 {
   imports = [
-    ../container/podman.nix
+    (if backend == "docker" then ../container/docker.nix else ../container/podman.nix)
   ] ++ lib.optionals (domain != null) [
     ../../services/web/nginx.nix
   ];
@@ -16,7 +16,7 @@
     ];
 
     virtualisation.oci-containers = {
-      backend = "podman";
+      inherit backend;
       containers.alist = {
         image = "xhofe/alist:beta";
         ports = [ "5244:5244" ];
