@@ -53,7 +53,7 @@ let
           
           # 验证服务
           machine.wait_for_unit("nginx.service")
-          machine.wait_for_unit("podman.service")
+          machine.wait_for_unit("podman.socket")
           
           # 验证业务逻辑
           assert "200" in machine.succeed("curl -I http://alist.tohu.shaog.uk")
