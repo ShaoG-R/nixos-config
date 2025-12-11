@@ -3,7 +3,6 @@ name: Build NixOS Configuration
 on:
   push:
     branches:
-      - main
       - rp
     paths-ignore:
       - 'README.md'
@@ -31,5 +30,9 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Disko Images
-        run: nix build --accept-flake-config .#nixosConfigurations.${{ matrix.host }}.config.system.build.diskoImages
+      - name: Setup Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v13
+
+      - name: Build System Toplevel
+        # 相比 diskoImages，这能验证系统配置的有效性，但速度快得多
+        run: nix build --accept-flake-config .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
