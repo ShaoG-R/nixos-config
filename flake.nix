@@ -20,6 +20,7 @@
       default = { config, pkgs, lib, ... }: {
         imports = [
           nixos-facter-modules.nixosModules.facter
+          disko.nixosModules.disko
           
           ./modules/app/default.nix
           ./modules/base/default.nix

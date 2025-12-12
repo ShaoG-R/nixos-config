@@ -1,4 +1,4 @@
-{ lib, config, pkgs, disko, ... }:
+{ lib, config, pkgs, ... }:
 with lib;
 let
   cfg = config.my.hardware.disk;
@@ -6,9 +6,7 @@ let
   safeSwapSize = if cfg.swapSize != null then cfg.swapSize else 0;
   imageSize = "${toString (safeSwapSize + 3072)}M";
 in {
-  imports = [
-    disko.nixosModules.disko
-  ];
+  imports = [ ];
 
   options.my.hardware.disk = {
     enable = mkEnableOption "Disk Configuration";
