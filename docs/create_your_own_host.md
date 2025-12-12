@@ -1,161 +1,363 @@
-# 如何创建自己的 NixOS 主机配置
+# 创建自定义主机配置
 
-本文档将指导你如何基于本仓库的配置模板，为您自己的 VPS 或物理机创建 NixOS 配置。
+本文档指导你如何基于本仓库的模块库，为你的 VPS 或物理机创建 NixOS 配置。
 
-由于本配置库采用 Cloud-Native 设计，**请务必先完成 GitHub 仓库的配置**。
+---
+
+## 架构概述
+
+本仓库采用 **模块库 + 独立主机配置** 的分离架构：
+
+```
+nixos-config/
+├── flake.nix              # 模块库入口
+├── modules/               # 可复用模块
+└── vps/                   # 主机配置目录
+    ├── tohu/              # 示例主机 1
+    │   ├── flake.nix      # 主机配置 (独立 flake)
+    │   └── facter.json    # 硬件探测报告
+    └── hyperv/            # 示例主机 2
+        ├── flake.nix
+        └── facter.json
+```
+
+每个主机都是一个**独立的 Flake**，通过 `my-lib.url = "path:../../"` 引用模块库。
+
+---
 
 ## 准备工作
 
-1. **Fork & Configure**: 如果你还没有配置自己的仓库，请先阅读：
-   👉 **[GitHub 仓库配置指南](./github_repo_config.md)**
+### 1. Fork 仓库
 
-2. **Clone 仓库**: 将你的 Fork 克隆到本地进行编辑。
-   ```bash
-   git clone git@github.com:<你的用户名>/nixos-config.git
-   cd nixos-config
-   ```
+如果你还没有配置自己的仓库，请先阅读：
 
-## 创建流程
+👉 **[GitHub 仓库配置指南](./github_repo_config.md)**
 
-### 第一步：准备主机配置
+### 2. Clone 到本地
 
-首先确认你的主机网络环境是否支持 DHCP。我们为您准备了详细的探测教程：
+```bash
+git clone git@github.com:<你的用户名>/nixos-config.git
+cd nixos-config
+```
+
+---
+
+## 创建主机配置
+
+### 第一步：创建主机目录
+
+```bash
+# 创建新主机目录
+mkdir -p vps/<新主机名>
+cd vps/<新主机名>
+```
+
+### 第二步：确定网络配置方式
+
+首先确认你的主机网络环境：
+
 👉 **[如何检测主机是否支持 DHCP](./create_your_own_host/check_dhcp.md)**
 
-**若支持 DHCP:**
-可以直接复制 `server/vps/hyperv.nix` 作为模板：
+根据结果选择合适的模板：
+
+**DHCP 环境 (推荐):**
 ```bash
-cp server/vps/hyperv.nix server/vps/<新主机名>.nix
+cp ../hyperv/flake.nix ./flake.nix
 ```
-*记得修改 `<新主机名>.nix` 中 `facter.reportPath` 的 `./facter/hyperv.json` 为 `./facter/<新主机名>.json`。*
 
-**若不支持 DHCP (需静态 IP):**
-请复制 `server/vps/tohu.nix` 作为模板：
+**静态 IP 环境:**
 ```bash
-cp server/vps/tohu.nix server/vps/<新主机名>.nix
+cp ../tohu/flake.nix ./flake.nix
 ```
-*需修改 `<新主机名>.nix` 中 `facter.reportPath` 的 `./facter/tohu.json` 为 `./facter/<新主机名>.json`，并根据你主机的实际网络情况修改 `network` 相关配置。*
 
-### 第二步：配置自动升级源
+### 第三步：编辑主机配置
 
-为了让 VPS 能够自动从你的仓库拉取更新，你需要修改 `server/vps/profiles/update/auto-upgrade.nix`。
-
-1. 打开该文件。
-2. 找到 `flake = "github:ShaoG-R/nixos-config";`。
-3. 将 `ShaoG-R` 替换为你的 GitHub 用户名。
-
-### 第三步：SSH 与 认证配置
-
-打开生成的 `<新主机名>.nix`，查看 `auth` 导入部分。
-
-**1. 修改登录方式 (可选)**
-如果你希望允许密码登录（默认为仅 Key 登录），请将 `auth/default.nix` 修改为 `auth/permit_passwd.nix`：
+打开 `flake.nix`，根据以下模板进行配置：
 
 ```nix
-  extraModules = [
-    # ...
-    # 修改这里：default.nix (仅Key) -> permit_passwd.nix (允许密码)
-    (import ./auth/permit_passwd.nix {
-       # ...
-    })
-    # ...
-  ];
+{
+  description = "<新主机名> Configuration";
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
+    my-lib.url = "path:../../";
+    my-lib.inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+  outputs = { self, nixpkgs, my-lib, ... }: 
+  let
+    # 通用配置 (用于实际部署和测试)
+    commonConfig = { config, pkgs, ... }: {
+      system.stateVersion = "25.11"; 
+      my.base.enable = true;
+      
+      # ========== 硬件配置 ==========
+      my.hardware.type = "vps";  # "vps" 或 "physical"
+      my.hardware.disk = {
+        enable = true;
+        device = "/dev/sda";     # 磁盘设备
+        swapSize = 2048;         # Swap 大小 (MB)，0 禁用
+      };
+      
+      # ========== 性能配置 ==========
+      my.performance.tuning.enable = true;
+      my.memory.mode = "aggressive";  # "conservative" / "aggressive"
+      
+      # ========== 容器配置 ==========
+      my.container.podman.enable = true;
+      
+      # ========== 自动更新配置 ==========
+      my.base.update = {
+        enable = true;
+        allowReboot = true;       # 更新后自动重启
+        # flakeUri 默认使用 github:ShaoG-R/nixos-config?dir=vps/${hostName}
+        # 如需自定义，取消下行注释:
+        # flakeUri = "github:<你的用户名>/nixos-config?dir=vps/<主机名>";
+      };
+    };
+  in
+  {
+    nixosConfigurations.<新主机名> = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      specialArgs = { inputs = my-lib.inputs; };
+      modules = [
+        # 1. 引入模块库
+        my-lib.nixosModules.default
+        my-lib.nixosModules.kernel-xanmod  # 或 kernel-cachyos / kernel-cachyos-unstable
+        
+        # 2. 通用配置
+        commonConfig
+        
+        # 3. 主机特有配置
+        ({ config, pkgs, ... }: {
+          networking.hostName = "<新主机名>";
+          facter.reportPath = ./facter.json;
+          
+          # ========== 网络配置 ==========
+          # DHCP 模式:
+          my.hardware.network.single-interface = {
+            enable = true;
+            dhcp.enable = true;
+          };
+          
+          # 静态 IP 模式 (取消注释并配置):
+          # my.hardware.network.single-interface = {
+          #   enable = true;
+          #   ipv4 = {
+          #     enable = true;
+          #     address = "192.168.1.100";
+          #     prefixLength = 24;
+          #     gateway = "192.168.1.1";
+          #   };
+          # };
+          
+          # ========== 认证配置 ==========
+          my.auth.root = {
+            mode = "default";  # "default" (仅密钥) 或 "permit_passwd" (允许密码)
+            initialHashedPassword = "$6$...";  # 密码 Hash (见下方生成方法)
+            authorizedKeys = [ 
+              "ssh-ed25519 AAAA..." 
+            ];
+          };
+          
+          # ========== 应用服务 (可选) ==========
+          # my.app.web.alist = {
+          #   enable = true;
+          #   domain = "alist.example.com";
+          #   backend = "podman";
+          # };
+        })
+        
+        # 4. 内联测试模块 (可选，见下方)
+      ];
+    };
+  };
+}
 ```
 
-**2. 设置密码和 SSH Key**
-生成你的密码 Hash：
+### 第四步：配置认证
+
+#### 生成密码 Hash
+
 ```bash
 nix run nixpkgs#mkpasswd -- -m sha-512
 ```
 
-然后替换配置文件中的 `initialHashedPassword` 和 `authorizedKeys`。
+将生成的 Hash 填入 `my.auth.root.initialHashedPassword`。
 
-### 第四步：生成硬件报告 (facter.json)
+#### 添加 SSH 公钥
 
-我们需要使用 `nixos-facter` 来自动探测硬件配置。请在目标机器（或其他 Linux 环境）上运行生成，并将结果保存到 `server/vps/facter/<新主机名>.json`。
+将你的 SSH 公钥添加到 `my.auth.root.authorizedKeys` 列表。
+
+查看本地公钥:
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+
+#### 认证模式说明
+
+| 模式 | SSH 密码登录 | SSH 密钥登录 | 说明 |
+|------|-------------|-------------|------|
+| `default` | ❌ 禁止 | ✅ 允许 | 推荐，更安全 |
+| `permit_passwd` | ✅ 允许 | ✅ 允许 | 密码登录，方便但不安全 |
+
+### 第五步：生成硬件报告
+
+在目标机器上运行 `nixos-facter` 生成硬件探测报告：
 
 ```bash
-# 示例：直接在目标机器上生成并打印（你需要复制内容到本地文件）
-nix run github:nix-community/nixos-facter
+# 方法 1: 在目标机器上直接生成
+nix run github:nix-community/nixos-facter -- -o facter.json
+
+# 方法 2: 远程执行并保存到本地
+ssh root@<TARGET_IP> "nix run --extra-experimental-features 'nix-command flakes' github:nix-community/nixos-facter" > facter.json
 ```
 
-或者如果你按照 README 方式二进入了 Nix 环境，可以直接生成到挂载的仓库目录中。
+将 `facter.json` 保存到主机目录 (`vps/<新主机名>/facter.json`)。
 
-### 第五步：注册新主机到 Flake
+### 第六步：选择内核
 
-编辑 `server/vps.nix`，在返回的 Set 中添加你的新主机配置。
+根据需求选择内核模块：
 
-```nix
-  # ... 现有配置 ...
-  
-  <新主机名> = import ./vps/<新主机名>.nix {
-    inherit mkSystem;
-    pkgSrc = inputs.nixpkgs-25-11; # 选择使用的 nixpkgs 版本
-  };
-```
-
-### 第六步：提交、推送与 PR
-
-由于我们对 `main` 分支开启了保护（Best Practice），你不能直接推送到主分支。你需要通过 Pull Request 来合并更改。
-
-1. **创建并切换到新分支**：
-   ```bash
-   git checkout -b add-host-<新主机名>
-   ```
-
-2. **提交更改**：
-   ```bash
-   git add .
-   git commit -m "Add new host: <新主机名>"
-   ```
-
-3. **推送到远程**：
-   ```bash
-   git push -u origin add-host-<新主机名>
-   ```
-
-4. **创建 Pull Request**：
-   在终端输出中通常会包含一个创建 PR 的链接（或者直接访问你的 GitHub 仓库页面）。
-   - 创建 PR 归并入 `main`。
-   - 等待 CI (`check-configuration`) 检查通过。
-   - 检查通过后，合并 PR。
-
-一旦合并进入 `main`，GitHub Actions 就会开始构建，你的 GitOps 流程正式启动。
-
-**接下来？**
-回到主页 [README](../README.md)，选择一种方式（如 GitHub Release + DD）进行安装。
+| 模块 | 适用场景 | 需要额外 overlay |
+|------|---------|-----------------|
+| `kernel-xanmod` | 通用兼容性好，无需额外配置 | ❌ |
+| `kernel-cachyos` | CachyOS 稳定版，性能优化 | ✅ chaotic |
+| `kernel-cachyos-unstable` | CachyOS 最新版，最激进优化 | ✅ chaotic 完整 |
 
 ---
 
-## 进阶：自定义体验
+## 添加内联测试 (可选)
 
-除了基础的主机配置，你还可以深入定制系统行为。
+为了验证配置正确性，可以添加内联 VM 测试：
 
-### 自定义磁盘和文件系统 (`server/vps/disk/specific/common.nix`)
+```nix
+# 在 modules 列表末尾添加
+({ config, pkgs, ... }: 
+let
+  testPkgs = import my-lib.inputs.nixpkgs {
+    system = "x86_64-linux";
+    config.allowUnfree = true;
+    # 如果使用 cachyos 内核，需要添加 overlay:
+    # overlays = [ my-lib.inputs.chaotic.overlays.default ];
+  };
+in {
+  system.build.vmTest = pkgs.testers.nixosTest {
+    name = "<新主机名>-inline-test";
+    
+    nodes.machine = { config, lib, ... }: {
+      imports = [ 
+        my-lib.nixosModules.default 
+        my-lib.nixosModules.kernel-xanmod
+        commonConfig
+      ];
+      
+      nixpkgs.pkgs = testPkgs;
+      _module.args.inputs = my-lib.inputs;
+      networking.hostName = "<新主机名>-test";
+    };
+    
+    testScript = ''
+      start_all()
+      machine.wait_for_unit("multi-user.target")
+      machine.wait_for_unit("podman.socket")
+    '';
+  };
+})
+```
 
-该文件定义了通过 disko 进行的分区布局。
-- **文件位置**: `server/vps/disk/specific/common.nix`
-- **默认布局**: BIOS+GPT 兼容引导，ESP 分区，Swap 分区，以及一个 Btrfs Root 分区。
-- **Btrfs 子卷**: 默认创建了 `@`, `@home`, `@nix`, `@log` 四个子卷，并启用 zstd 压缩。
+运行测试:
+```bash
+nix build .#nixosConfigurations.<新主机名>.config.system.build.vmTest
+```
 
-**如何自定义：**
-如果你需要修改分区大小、增加加密 (LUKS) 或改变文件系统（如 ext4, xfs），可以创建 `server/vps/disk/specific/common.nix` 的副本（例如 `custom.nix`），并创建对应的 Swap 封装文件（如 `Swap-Custom.nix`）来引用它。
-*注意：`common.nix` 接受 `swapSize` 和 `imageSize` 参数，这使得它可以被复用。*
+---
 
-### 自定义平台通用设置 (`server/vps/platform/generic.nix`)
+## 提交配置
 
-该文件汇集了所有 VPS 通用的基础配置。
-- **文件位置**: `server/vps/platform/generic.nix`
-- **包含内容**:
-  - **内核**: 默认使用 XanMod 稳定版内核。
-  - **网络**: 禁用 Predictable Interface Names (默认使用 eth0)，启用 Podman DNS。
-  - **维护**: 自动升级 (每天 04:00)，自动垃圾回收 (每周)，Nix Store 自动去重。
-  - **本地化**: 时区设为 Asia/Shanghai，默认语言 zh_CN.UTF-8。
+### 1. 创建新分支
 
-**如何自定义：**
-1. **覆盖设置**: 在你的 `<新主机名>.nix` 中，你可以使用 `lib.mkForce` 强制覆盖这里的默认设置。
-   例如，要更改时区：
-   ```nix
-   time.timeZone = lib.mkForce "America/New_York";
-   ```
-2. **模块化替换**: 如果你不想要这些通用设置，可以在 `<新主机名>.nix` 的 `extraModules` 中移除 `./platform/generic.nix`，并建立自己的 platform 模块。
+```bash
+git checkout -b add-host-<新主机名>
+```
+
+### 2. 提交更改
+
+```bash
+git add vps/<新主机名>/
+git commit -m "Add new host: <新主机名>"
+```
+
+### 3. 推送并创建 PR
+
+```bash
+git push -u origin add-host-<新主机名>
+```
+
+在 GitHub 上创建 Pull Request 合并到 `main` 分支。
+
+### 4. 等待 CI 检查
+
+- CI 会自动运行配置检查
+- 检查通过后合并 PR
+- 合并后可触发镜像构建
+
+---
+
+## 进阶配置
+
+### 自定义磁盘布局
+
+`my.hardware.disk` 模块提供的默认布局：
+
+```
+/dev/sda
+├── sda1 (1MB)     - BIOS Boot
+├── sda2 (32MB)    - ESP (/boot/efi)
+├── sda3 (可选)    - Swap
+└── sda4 (剩余)    - Btrfs Root
+    ├── @          → /
+    ├── @home      → /home
+    ├── @nix       → /nix
+    └── @log       → /var/log
+```
+
+如需自定义，可以禁用 `my.hardware.disk.enable` 并使用原生 Disko 配置。
+
+### 自定义自动更新源
+
+默认情况下，自动更新会从你的 GitHub 仓库拉取：
+
+```nix
+my.base.update.flakeUri = "github:<你的用户名>/nixos-config?dir=vps/<主机名>";
+```
+
+如果你的仓库名称或结构不同，请相应修改此选项。
+
+### 添加应用服务
+
+本仓库提供了一些预配置的应用服务模块：
+
+```nix
+# Alist 文件列表
+my.app.web.alist = {
+  enable = true;
+  domain = "files.example.com";
+  backend = "podman";
+};
+
+# X-UI-YG 代理面板
+my.app.web.x-ui-yg = {
+  enable = true;
+  domain = "panel.example.com";
+  backend = "podman";
+};
+```
+
+---
+
+## 下一步
+
+配置完成后，前往安装指南进行部署：
+
+👉 **[安装指南](./install.md)**
