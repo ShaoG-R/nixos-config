@@ -17,7 +17,8 @@ in {
 
       initialHashedPassword = mkOption {
         type = types.str;
-        description = "Initial hashed password for root user";
+        default = "";
+        description = "Initial hashed password for root user (empty = no password login)";
       };
 
       authorizedKeys = mkOption {
