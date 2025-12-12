@@ -4,32 +4,20 @@ let
   cfg = config.my.performance.kernel;
 in {
   imports = [
-    (mkIf (cfg.mode == "cachyos") {
-      imports = [
-        inputs.chaotic.nixosModules.nyx-cache
-        inputs.chaotic.nixosModules.nyx-overlay
-        inputs.chaotic.nixosModules.nyx-registry
-      ];
-    })
-    (mkIf (cfg.mode == "cachyos-unstable") {
-      imports = [
-        # Unstable 版本推荐直接使用 default 模块
-        inputs.chaotic.nixosModules.default
-      ];
-    })
+    inputs.chaotic.nixosModules.default
   ];
 
   options.my.performance.kernel = {
     mode = mkOption {
-      type = types.enum [ "cachyos" "cachyos-unstable" "xanmod" "none" ];
+      type = types.enum [ "cachyos-unstable" "xanmod" "none" ];
       default = "none";
       description = "Select kernel optimization mode.";
     };
   };
 
   config = mkMerge [
-    # --- CachyOS (Stable/Unstable) Common Configuration ---
-    (mkIf (cfg.mode == "cachyos" || cfg.mode == "cachyos-unstable") {
+    # --- CachyOS (Unstable) Configuration ---
+    (mkIf (cfg.mode == "cachyos-unstable") {
       nix.settings = {
         extra-substituters = [ "https://nyx.chaotic.cx" "https://chaotic-nyx.cachix.org" ];
         extra-trusted-public-keys = [ "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8=" ];
