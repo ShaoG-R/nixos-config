@@ -46,7 +46,11 @@ in {
       interfaces.eth0 = {
         # 默认逻辑：只有v4和v6同时为静态时才默认为关闭dhcp
         # 否则（例如只有v4静态，或都没有静态）默认为开启dhcp
-        useDHCP = mkDefault (!(cfg.ipv4.enable && cfg.ipv6.enable));
+        # 如果显式启用了 DHCP 模块 (cfg.dhcp.enable)，则强制开启
+        useDHCP = mkMerge [
+          (mkDefault (!(cfg.ipv4.enable && cfg.ipv6.enable)))
+          (mkIf cfg.dhcp.enable true)
+        ];
         
         ipv4.addresses = mkIf cfg.ipv4.enable [{
           address = cfg.ipv4.address;
@@ -66,8 +70,5 @@ in {
         interface = "eth0";
       };
     };
-
-    # 如果显式启用了 DHCP 模块，则强制开启 DHCP，覆盖上面的默认逻辑
-    networking.interfaces.eth0.useDHCP = mkIf cfg.dhcp.enable true;
   };
 }
