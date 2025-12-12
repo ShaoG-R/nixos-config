@@ -41,7 +41,7 @@
   {
     nixosConfigurations.tohu = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
-      specialArgs = { inputs = my-lib.inputs; isImportChaotic = false; };
+      specialArgs = { inputs = my-lib.inputs; isImportChaotic = true; };
       modules = [
         # 1. 引入我们的模块库
         my-lib.nixosModules.default
@@ -98,7 +98,7 @@
         in {
           system.build.vmTest = pkgs.testers.runNixOSTest {
             name = "tohu-inline-test";
-            node.specialArgs = { inputs = my-lib.inputs; isImportChaotic = true; };
+            node.specialArgs = { inputs = my-lib.inputs; isImportChaotic = false; };
             
             nodes.machine = { config, lib, ... }: {
                 imports = [ 
