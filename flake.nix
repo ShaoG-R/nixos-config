@@ -10,11 +10,9 @@
     disko.inputs.nixpkgs.follows = "nixpkgs";
     
     nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
-    
-    chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
   };
 
-  outputs = { self, nixpkgs, disko, nixos-facter-modules, chaotic, ... }@inputs: {
+  outputs = { self, nixpkgs, disko, nixos-facter-modules, ... }@inputs: {
     # 1. 导出所有模块为一个聚合入口
     nixosModules = {
       default = { config, pkgs, lib, ... }: {
@@ -26,23 +24,20 @@
           ./modules/base/default.nix
           ./modules/hardware/default.nix
         ];
-        
-
       };
       
-      # 2. 细分导出 - 内核优化模块（闭包包装以解决 inputs 在 imports 中的无限递归问题）
-      kernel-cachyos = {
+      # 2. 细分导出 - 内核优化模块（通过子 Flake 独立管理）
+      # [黑魔法] builtins.getFlake 在模块函数内部调用，延迟评估
+      # ${./path} 将目录放入 Nix Store，保证纯净性
+      # 子 Flake 拥有独立的 flake.lock，与根目录完全隔离
+      kernel-cachyos = { ... }: {
         imports = [
-          chaotic.nixosModules.nyx-cache
-          chaotic.nixosModules.nyx-overlay
-          chaotic.nixosModules.nyx-registry
-          ./modules/kernel/cachyos.nix
+          (builtins.getFlake "${./modules/kernel/cachyos}").nixosModules.default
         ];
       };
-      kernel-cachyos-unstable = {
+      kernel-cachyos-unstable = { ... }: {
         imports = [
-          chaotic.nixosModules.default
-          ./modules/kernel/cachyos-unstable.nix
+          (builtins.getFlake "${./modules/kernel/cachyos-unstable}").nixosModules.default
         ];
       };
       kernel-xanmod = ./modules/kernel/xanmod.nix;
