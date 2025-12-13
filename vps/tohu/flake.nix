@@ -5,11 +5,11 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
     my-lib.url = "path:../../";
     my-lib.inputs.nixpkgs.follows = "nixpkgs";
-    kernel-cachyos-unstable.url = "path:../../extra/kernel/cachyos-unstable";
-    kernel-cachyos-unstable.inputs.nixpkgs.follows = "nixpkgs";
+    cachyos.url = "github:ShaoG-R/nixos-config-extra?dir=kernel/cachyos-unstable";
+    cachyos.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, my-lib, kernel-cachyos-unstable, ... }: 
+  outputs = { self, nixpkgs, my-lib, cachyos, ... }: 
   let
     commonConfig = { config, pkgs, ... }: {
         system.stateVersion = "25.11"; 
@@ -46,7 +46,7 @@
       modules = [
         # 1. 引入我们的模块库
         my-lib.nixosModules.default
-        kernel-cachyos-unstable.nixosModules.default
+        cachyos.nixosModules.default
         
         # 2. 通用配置
         commonConfig
@@ -93,10 +93,10 @@
         ({ config, pkgs, ... }: 
         let
           # 构建带 chaotic overlay 的 pkgs
-          testPkgs = import kernel-cachyos-unstable.inputs.nixpkgs {
+          testPkgs = import cachyos.inputs.nixpkgs {
             system = "x86_64-linux";
             config.allowUnfree = true;
-            overlays = [ kernel-cachyos-unstable.inputs.chaotic.overlays.default ];
+            overlays = [ cachyos.inputs.chaotic.overlays.default ];
           };
         in {
           system.build.vmTest = pkgs.testers.nixosTest {
@@ -105,7 +105,7 @@
             nodes.machine = { config, lib, ... }: {
                 imports = [ 
                     my-lib.nixosModules.default 
-                    kernel-cachyos-unstable.nixosModules.default
+                    cachyos.nixosModules.default
                     commonConfig
                 ];
                 
