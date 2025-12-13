@@ -11,6 +11,11 @@
 
   outputs = { self, nixpkgs, lib-core, cachyos, ... }: 
   let
+    system = "x86_64-linux";
+    
+    # 使用 kernel flake 暴露的便捷函数构建 testPkgs
+    testPkgs = cachyos.lib.makeTestPkgs system;
+    
     commonConfig = { config, pkgs, ... }: {
         system.stateVersion = "25.11"; 
         core.base.enable = true;
@@ -41,7 +46,7 @@
   in
   {
     nixosConfigurations.tohu = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
+      inherit system;
       specialArgs = { inputs = lib-core.inputs; };
       modules = [
         # 1. 引入我们的模块库
@@ -89,16 +94,7 @@
         })
         
         # 4. 内联测试模块
-        # 使用 testers.nixosTest 而非 runtesters.nixosTest，因为后者会将 nixpkgs.* 设为只读
-        ({ config, pkgs, ... }: 
-        let
-          # 构建带 chaotic overlay 的 pkgs
-          testPkgs = import cachyos.inputs.nixpkgs {
-            system = "x86_64-linux";
-            config.allowUnfree = true;
-            overlays = [ cachyos.inputs.chaotic.overlays.default ];
-          };
-        in {
+        ({ config, pkgs, ... }: {
           system.build.vmTest = pkgs.testers.nixosTest {
             name = "tohu-inline-test";
             
@@ -109,7 +105,7 @@
                     commonConfig
                 ];
                 
-                # testers.nixosTest 允许设置 nixpkgs.pkgs
+                # 使用 kernel flake 提供的 testPkgs
                 nixpkgs.pkgs = testPkgs;
                 
                 # testers.nixosTest 不支持 specialArgs，需要在这里注入 inputs
