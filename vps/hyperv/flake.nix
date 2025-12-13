@@ -68,7 +68,7 @@
         # 使用 testers.nixosTest 而非 runtesters.nixosTest，因为后者会将 nixpkgs.* 设为只读
         ({ config, pkgs, ... }: 
         let
-          testPkgs = import my-lib.inputs.nixpkgs {
+          testPkgs = import nixpkgs {
             system = "x86_64-linux";
             config.allowUnfree = true;
           };

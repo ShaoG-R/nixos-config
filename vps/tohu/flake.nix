@@ -90,11 +90,11 @@
         # 使用 testers.nixosTest 而非 runtesters.nixosTest，因为后者会将 nixpkgs.* 设为只读
         ({ config, pkgs, ... }: 
         let
-          # 构建带 chaotic overlay 的 pkgs
-          testPkgs = import my-lib.inputs.nixpkgs {
+          # 注意: chaotic overlay 现在由 kernel-cachyos-unstable 模块内部处理
+          # 测试时使用标准 nixpkgs 即可
+          testPkgs = import nixpkgs {
             system = "x86_64-linux";
             config.allowUnfree = true;
-            overlays = [ my-lib.inputs.chaotic.overlays.default ];
           };
         in {
           system.build.vmTest = pkgs.testers.nixosTest {
