@@ -27,17 +27,16 @@
       };
       
       # 2. 细分导出 - 内核优化模块（通过子 Flake 独立管理）
-      # [黑魔法] builtins.getFlake 在模块函数内部调用，延迟评估
-      # ${./path} 将目录放入 Nix Store，保证纯净性
+      # 使用 self.outPath 获取源码真实路径，避免 store path 问题
       # 子 Flake 拥有独立的 flake.lock，与根目录完全隔离
       kernel-cachyos = { ... }: {
         imports = [
-          (builtins.getFlake "${./modules/kernel/cachyos}").nixosModules.default
+          (builtins.getFlake "path:${self.outPath}/modules/kernel/cachyos").nixosModules.default
         ];
       };
       kernel-cachyos-unstable = { ... }: {
         imports = [
-          (builtins.getFlake "${./modules/kernel/cachyos-unstable}").nixosModules.default
+          (builtins.getFlake "path:${self.outPath}/modules/kernel/cachyos-unstable").nixosModules.default
         ];
       };
       kernel-xanmod = ./modules/kernel/xanmod.nix;
