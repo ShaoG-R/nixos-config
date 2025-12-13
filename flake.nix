@@ -2,44 +2,62 @@
   description = "My NixOS Flake Library";
 
   inputs = {
-    # 基础依赖 (用于定义 module 系统)
+    # 基础依赖
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    
+    # flake-parts - 模块化 flake 框架
+    flake-parts.url = "github:hercules-ci/flake-parts";
     
     # 外部模块依赖
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
     
     nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
+    
+    # 注意：chaotic 不在这里！它被隔离到 kernel 分区中
   };
 
-  outputs = { self, nixpkgs, disko, nixos-facter-modules, ... }@inputs: {
-    # 1. 导出所有模块为一个聚合入口
-    nixosModules = {
-      default = { config, pkgs, lib, ... }: {
-        imports = [
-          nixos-facter-modules.nixosModules.facter
-          disko.nixosModules.disko
-          
-          ./modules/app/default.nix
-          ./modules/base/default.nix
-          ./modules/hardware/default.nix
-        ];
+  outputs = inputs@{ flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      # 导入 partitions 支持
+      imports = [
+        flake-parts.flakeModules.partitions
+      ];
+
+      # 定义系统架构
+      systems = [ "x86_64-linux" "aarch64-linux" ];
+
+      # === 分区配置 ===
+      # kernel 分区包含 chaotic 依赖，只有使用 kernel 模块时才会获取
+      partitions.kernel = {
+        # 子 flake 包含 chaotic input
+        extraInputsFlake = ./modules/kernel;
+        # flake-parts 模块定义 kernel NixOS 模块
+        module.imports = [ ./modules/kernel/flake-module.nix ];
       };
-      
-      # 2. 细分导出 - 内核优化模块（通过子 Flake 独立管理）
-      # 使用 self.outPath 获取源码真实路径，避免 store path 问题
-      # 子 Flake 拥有独立的 flake.lock，与根目录完全隔离
-      kernel-cachyos = { ... }: {
-        imports = [
-          (builtins.getFlake "path:${self.outPath}/modules/kernel/cachyos").nixosModules.default
-        ];
+
+      # 指定哪些 flake 输出来自分区
+      partitionedAttrs = {
+        # kernel 分区的 nixosModules 将被合并到主 flake
+        # 注意：这里需要让分区定义特定的模块，而非覆盖整个 nixosModules
       };
-      kernel-cachyos-unstable = { ... }: {
-        imports = [
-          (builtins.getFlake "path:${self.outPath}/modules/kernel/cachyos-unstable").nixosModules.default
-        ];
+
+      # === 主要 Flake 输出 ===
+      flake = {
+        # 核心 NixOS 模块（不需要 chaotic）
+        nixosModules = {
+          # 聚合入口 - 导入所有基础模块
+          default = { config, pkgs, lib, ... }: {
+            imports = [
+              inputs.nixos-facter-modules.nixosModules.facter
+              inputs.disko.nixosModules.disko
+              
+              ./modules/app/default.nix
+              ./modules/base/default.nix
+              ./modules/hardware/default.nix
+            ];
+          };
+        };
       };
-      kernel-xanmod = ./modules/kernel/xanmod.nix;
     };
-  };
 }
