@@ -35,8 +35,8 @@ jobs:
           nix flake update
           nix flake update --flake ./vps/tohu
           nix flake update --flake ./vps/hyperv
-          nix flake update --flake ./modules/kernel/cachyos
-          nix flake update --flake ./modules/kernel/cachyos-unstable
+          # kernel 分区的 extraInputsFlake (包含 chaotic)
+          nix flake update --flake ./modules/kernel
 
       - name: Create Pull Request
         id: cpr
