@@ -78,6 +78,9 @@ jobs:
           sudo udevadm trigger --name-match=kvm
           ls -la /dev/kvm
 
+      - name: Update flake.lock
+        uses: ./.github/actions/update-locks
+
       - name: Run NixOS Integration Tests
         # 运行 Host Flake 中定义的 inline vmTest
         # --print-build-logs 非常重要，如果测试挂了，你能看到 Python 脚本的报错输出
