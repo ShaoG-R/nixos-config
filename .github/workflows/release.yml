@@ -5,7 +5,7 @@ on:
     inputs:
       version:
         description: 'Release Version (e.g. v1.0.0)'
-        required: true
+        required: false
         type: string
 
 jobs:
@@ -71,8 +71,9 @@ jobs:
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.version || github.ref_name }}
-          name: Release ${{ inputs.version || github.ref_name }}
+          tag_name: ${{ github.ref_name == 'pre-release' && 'pre-release' || inputs.version || github.ref_name }}
+          name: Release ${{ github.ref_name == 'pre-release' && 'pre-release' || inputs.version || github.ref_name }}
           body_path: release_body.md
           files: "*.tar.zst"
+          prerelease: ${{ github.ref_name == 'pre-release' }}
           generate_release_notes: true
