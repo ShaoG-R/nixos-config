@@ -3,7 +3,7 @@ with lib;
 let
   cfg = config.my.kernel.cachyos-unstable;
   # 引用 cachyos 目录下的共享 sysctl 配置
-  sysctlConfig = import ../cachyos/sysctl.nix;
+  sysctlConfig = import ./sysctl.nix;
 in {
   options.my.kernel.cachyos-unstable = {
     enable = mkOption {
