@@ -117,7 +117,15 @@ let
     };
 
   # 生成最终的配置文件 (Derivation)
-  configFile = yamlFormat.generate "hysteria.yaml" hysteriaConfigRaw;
+  # 使用 yq-go 而不是 pkgs.formats.yaml，以获得更好的缩进格式（列表缩进），
+  # 使其与 core/app/proxy/hysteria/example.yaml 更一致。
+  configFile = pkgs.runCommand "hysteria.yaml" {
+    nativeBuildInputs = [ pkgs.yq-go ];
+    value = builtins.toJSON hysteriaConfigRaw;
+    passAsFile = [ "value" ];
+  } ''
+    yq -P '.' "$valuePath" > $out
+  '';
 
   # --- 2. 定义 Docker Compose 结构 ---
   composeConfigRaw = {
