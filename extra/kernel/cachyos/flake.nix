@@ -10,13 +10,20 @@
 
   outputs = { self, nixpkgs, chaotic, ... }: {
     nixosModules = {
-      default = {
+      default = { pkgs, ... }: {
         imports = [
           chaotic.nixosModules.nyx-cache
           chaotic.nixosModules.nyx-overlay
           chaotic.nixosModules.nyx-registry
           ./default.nix
         ];
+
+        # 在自动更新前先拉取 chaotic-nyx 缓存配置
+        systemd.services.nixos-upgrade.serviceConfig.ExecStartPre = 
+          "${pkgs.cachix}/bin/cachix use chaotic-nyx";
+
+        # 安装 cachix 工具
+        environment.systemPackages = [ pkgs.cachix ];
       };
     };
     

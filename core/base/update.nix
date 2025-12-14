@@ -20,8 +20,6 @@ in {
   };
 
   config = mkIf cfg.enable {
-    # 安装 cachix 工具用于缓存管理
-    environment.systemPackages = [ pkgs.cachix ];
 
     # --- 自动更新配置 ---
     system.autoUpgrade = {
@@ -41,9 +39,6 @@ in {
       randomizedDelaySec = "10min";
     };
 
-    # 在自动更新前先拉取 chaotic-nyx 缓存配置
-    systemd.services.nixos-upgrade.serviceConfig.ExecStartPre = 
-      "${pkgs.cachix}/bin/cachix use chaotic-nyx";
 
     # --- 垃圾回收与存储优化 ---
     nix.gc = {
