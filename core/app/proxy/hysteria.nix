@@ -386,11 +386,11 @@ in {
               default = {};
               type = types.submodule {
                 options = {
-                   mode = mkOption { type = types.enum ["auto" "4" "6"]; default = "auto"; };
+                   mode = mkOption { type = types.nullOr (types.enum ["auto" "4" "6"]); default = null; };
                    bindIPv4 = mkOption { type = types.nullOr types.str; default = null; };
                    bindIPv6 = mkOption { type = types.nullOr types.str; default = null; };
                    bindDevice = mkOption { type = types.nullOr types.str; default = null; };
-                   fastOpen = mkOption { type = types.bool; default = false; };
+                   fastOpen = mkOption { type = types.nullOr types.bool; default = null; };
                 };
               };
             };
@@ -408,8 +408,8 @@ in {
               default = {};
               type = types.submodule {
                  options = {
-                   url = mkOption { type = types.str; default = ""; };
-                   insecure = mkOption { type = types.bool; default = false; };
+                   url = mkOption { type = types.nullOr types.str; default = null; };
+                   insecure = mkOption { type = types.nullOr types.bool; default = null; };
                  };
               };
             };
