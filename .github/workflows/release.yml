@@ -68,11 +68,22 @@ jobs:
             echo "- \`$f\`" >> release_body.md
           done
 
+      - name: Generate Release Name
+        id: release_name
+        run: |
+          if [ "${{ github.ref_name }}" == "pre-release" ]; then
+            RELEASE_NAME="Pre-Release $(date +'%Y%m%d-%H%M%S')-${GITHUB_SHA:0:7}"
+            echo "name=$RELEASE_NAME" >> $GITHUB_OUTPUT
+          else
+            RELEASE_NAME="Release ${{ inputs.version || github.ref_name }}"
+            echo "name=$RELEASE_NAME" >> $GITHUB_OUTPUT
+          fi
+
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name == 'pre-release' && 'pre-release' || inputs.version || github.ref_name }}
-          name: Release ${{ github.ref_name == 'pre-release' && 'pre-release' || inputs.version || github.ref_name }}
+          tag_name: ${{ github.ref_name == 'pre-release' && 'pre-release-latest' || inputs.version || github.ref_name }}
+          name: ${{ steps.release_name.outputs.name }}
           body_path: release_body.md
           files: "*.tar.zst"
           prerelease: ${{ github.ref_name == 'pre-release' }}
