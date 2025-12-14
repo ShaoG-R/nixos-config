@@ -494,6 +494,7 @@ in {
     # 2. 创建 Systemd 服务来管理 Docker Compose
     systemd.services.hysteria = {
       description = "Hysteria Server (${cfg.backend} compose)";
+      path = if cfg.backend == "docker" then [ pkgs.docker ] else [ pkgs.podman ];
       wantedBy = [ "multi-user.target" ];
       after = [ "network-online.target" ] ++ lib.optional (cfg.backend == "docker") "docker.service";
       requires = lib.optional (cfg.backend == "docker") "docker.service";
