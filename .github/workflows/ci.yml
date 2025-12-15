@@ -43,6 +43,8 @@ jobs:
           nix flake update --flake ./extra/kernel/cachyos
           nix flake update --flake ./extra/kernel/cachyos-unstable
           nix flake update --flake .
+          nix flake update --flake ./vps/hyperv
+          nix flake update --flake ./vps/tohu
 
       # 上传更新后的 lock 文件作为 artifact
       - name: Upload updated flake.lock files
@@ -54,6 +56,8 @@ jobs:
             core/flake.lock
             extra/kernel/cachyos/flake.lock
             extra/kernel/cachyos-unstable/flake.lock
+            vps/hyperv/flake.lock
+            vps/tohu/flake.lock
           retention-days: 1
 
   # ============================================================
@@ -143,12 +147,99 @@ jobs:
           nix build -L --print-build-logs .#checks.x86_64-linux.kernel-${{ matrix.kernel }}
 
   # ============================================================
-  # 任务 4: 聚合测试结果 (用于 Branch Protection Rule)
+  # 任务 4: VPS 静态构建检查 (确保能编译生成系统)
+  # ============================================================
+  vps-check-build:
+    needs: update-locks
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        host: [hyperv, tohu]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Download updated flake.lock files
+        uses: actions/download-artifact@v4
+        with:
+          name: flake-locks
+          path: .
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: |
+            download-buffer-size = 1073741824
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v16
+        with:
+          name: chaotic-nyx
+          skipPush: true
+
+      - name: Build System Toplevel (${{ matrix.host }})
+        # 这一步只编译不运行，确保语法和依赖没问题
+        run: nix build ./vps/${{ matrix.host }}#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
+
+  # ============================================================
+  # 任务 5: VPS VM 集成测试
+  # ============================================================
+  vps-vm-tests:
+    needs: update-locks
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        host: [hyperv, tohu]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Download updated flake.lock files
+        uses: actions/download-artifact@v4
+        with:
+          name: flake-locks
+          path: .
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: |
+            download-buffer-size = 1073741824
+            # 确保 Nix 知道我们可以用 KVM
+            system-features = kvm big-parallel nixos-test
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v16
+        with:
+          name: chaotic-nyx
+          skipPush: true
+
+      # 关键步骤：确保 Runner 能够使用硬件虚拟化加速
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -la /dev/kvm
+
+      - name: Run VM Test (${{ matrix.host }})
+        run: |
+          echo "Running VM test for host: ${{ matrix.host }}"
+          nix build -L --print-build-logs ./vps/${{ matrix.host }}#nixosConfigurations.${{ matrix.host }}.config.system.build.vmTest
+
+  # ============================================================
+  # 任务 6: 聚合测试结果 (用于 Branch Protection Rule)
   # ============================================================
   ci-success:
     needs: 
       - check-flake
       - vm-tests
+      - vps-check-build
+      - vps-vm-tests
     runs-on: ubuntu-latest
     if: always()
     steps:
