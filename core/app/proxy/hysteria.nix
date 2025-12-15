@@ -491,7 +491,21 @@ in {
     # 1. 确保所选的容器后端已启用
     core.container.${cfg.backend}.enable = true;
 
-    # 2. 创建 Systemd 服务来管理 Docker Compose
+    # 2. 自动配置防火墙
+    networking.firewall = {
+      allowedTCPPorts = mkIf (cfg.settings.acme != null && (cfg.settings.acme.type == null || cfg.settings.acme.type == "http")) [ 80 ];
+      allowedUDPPorts = let
+        portStr = last (splitString ":" cfg.settings.listen);
+        port = toInt portStr;
+      in [ port ];
+      allowedUDPPortRanges = mkIf cfg.portHopping.enable (let 
+        parts = splitString "-" cfg.portHopping.range;
+        from = toInt (head parts);
+        to = toInt (last parts);
+      in [ { inherit from to; } ]);
+    };
+
+    # 3. 创建 Systemd 服务来管理 Docker Compose
     systemd.services.hysteria = {
       description = "Hysteria Server (${cfg.backend} compose)";
       path = if cfg.backend == "docker" then [ pkgs.docker ] else [ pkgs.podman ];
