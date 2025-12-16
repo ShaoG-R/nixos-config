@@ -97,6 +97,7 @@
                 backend = "podman";
             };
             
+            # cat /var/lib/x-ui-yg/init.log 获取账号密码
             core.app.web.x-ui-yg = {
                 enable = true;
                 # 动态拼接域名: x-ui.cloudcone.shaog.uk
@@ -110,6 +111,7 @@
                 };
             };
 
+            # cat /run/hysteria/config.yaml 获取 auth 密码
             core.app.hysteria = {
               enable = true;
               backend = "podman";
