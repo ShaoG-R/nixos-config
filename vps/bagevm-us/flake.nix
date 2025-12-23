@@ -17,7 +17,7 @@
     # Host Configuration (集中配置区域)
     # ==========================================
     hostConfig = {
-      name = "bagevm_us";
+      name = "bagevm-us";
       domainRoot = "shaog.uk"; # 主域名，用于拼接
 
       auth = {
@@ -51,6 +51,7 @@
         core.hardware.type = "vps";
         core.hardware.disk = {
             enable = true;
+            device = "/dev/vda";
             swapSize = 2048;
         };
         
