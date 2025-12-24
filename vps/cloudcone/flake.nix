@@ -112,10 +112,10 @@
                 };
             };
 
-            # cat /run/hysteria/config.yaml 获取 auth 密码
             core.app.hysteria = {
               enable = true;
               backend = "podman";
+              # cat /run/hysteria/main/config.yaml 获取 auth 密码
               instances."main" = {
                 # 动态拼接域名: cloudcone.hy.shaog.uk
                 domain = "${hostConfig.name}.hy.${hostConfig.domainRoot}";
