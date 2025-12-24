@@ -592,6 +592,17 @@ in {
             mkdir -p $WORK_DIR
             cp ${configFile} ${runtimeConfig}
 
+            ${optionalString (i.domain != null) ''
+            # Try to copy certs from system ACME store if they exist
+            if [ -d "/var/lib/acme/${i.domain}" ]; then
+                echo "Copying certificates from /var/lib/acme/${i.domain}..."
+                cp -L /var/lib/acme/${i.domain}/fullchain.pem ${i.dataDir}/acme/server.crt || true
+                cp -L /var/lib/acme/${i.domain}/key.pem ${i.dataDir}/acme/server.key || true
+                chmod 644 ${i.dataDir}/acme/server.crt
+                chmod 644 ${i.dataDir}/acme/server.key
+            fi
+            ''}
+
             handle_secret() {
               local ph=$1; local file=$2
               if grep -q "$ph" ${runtimeConfig}; then
