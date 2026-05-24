@@ -1,6 +1,6 @@
 # NixOS Configuration Library
 
-> **Note**: 这是一个可复用的 NixOS 模块库，包含了基础系统、硬件、应用服务的模块化配置。
+> **Note**: 我已抛弃 flake，转而使用 npins，以追求更轻松的管理，请转向[Dot Hosts](https://github.com/shaogme/dot-hosts)
 
 这是一个基于 **GitOps** 理念设计的 NixOS 配置仓库，采用 **模块化架构** 设计，旨在实现：
 
